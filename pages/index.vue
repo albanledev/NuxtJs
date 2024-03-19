@@ -1,47 +1,69 @@
- <script setup lang="ts">
-const {find} = useStrapi()
-// import type {Player} from '~/models/player.model';
-
-// const data = await find('players')
-
-const { data, pending, error } = await useAsyncData('players', async () => { 
-        return await find('players', {
-            populate: '*',
-        }).then(res => res.data)
-    })
-
-
-
-    
-
-</script>
-
 <template>
     <div>
-        <h1>Hello world</h1>    
-        <pre v-if="data">{{ data }}</pre>
-        lien cliquable avec slug
-        {{ data}}
-    
+        <div class="my-4">
+            <h1>Joueurs</h1>
+            <label for="choix-couleur">Filtrer les joueurs: </label>
+            <select id="choix-couleur" v-model="selectedTag">
+                <option value="all">Tous</option>
+                <option value="happy">Heureux</option>
+                <option value="sad">Triste</option>
+                <option value="dead">Mort</option>
+                <option v-for="tag in tags" :key="tag.id" :value="tag.name">{{ tag.name }}</option>
+            </select>
 
-
-        <template v-if="pending">
-            <p>Loading...</p>
-        </template>
-        <template v-else>
-            <div class="my-4">
-                <!-- <div v-for="player in players?.data" :key="player.slug">
+            <ul>
+                <li v-for="player in filteredPlayers" :key="player.slug">
                     <a :href="`/players/${player.slug}`">{{ player.name }}</a>
-                </div> -->
-                <a :href="`/players/${player.slug}`" v-for="player in data" :key="player.slug">{{ player.name }}</a>
-            </div>
-        </template>
-
+                </li>
+            </ul>
+        </div>
     </div>
 </template>
 
+<script setup lang="ts">
+
+const { find } = useStrapi();
+
+const selectedTag = ref('all');
+const data = ref([]);
+const tags = ref([]);
+
+const loadData = async () => {
+    try {
+        const response = await find('players', { populate: '*' });
+        data.value = response.data;
+    } catch (error) {
+        console.error('Erreur lors du chargement des données des joueurs :', error);
+    }
+};
+
+const loadTags = async () => {
+    try {
+        const response = await find('tags');
+        tags.value = response.data;
+    } catch (error) {
+        console.error('Erreur lors du chargement des tags :', error);
+    }
+};
+
+loadData();
+loadTags();
+
+const filteredPlayers = ref([]);
+
+const filterPlayers = () => {
+    if (selectedTag.value === 'all') {
+        filteredPlayers.value = data.value;
+    } else {
+        filteredPlayers.value = data.value.filter(player => player.tag === selectedTag.value);
+    }
+};
+
+watchEffect(() => {
+    filterPlayers();
+});
+</script>
+
 <style scoped>
-
+/* Vos styles CSS ici */
 </style> 
-
-
