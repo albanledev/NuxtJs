@@ -20,16 +20,17 @@
                 <input type="text" id="search" v-model="searchTerm" @input="searchPlayers" />
             </div>
         </div>
+
+        <div v-if="loading" class="loading-message">Chargement en cours...</div>
   
-  
-        <ul>
+        <ul v-if="!loading">
           <li v-for="player in paginatedPlayers" :key="player.slug">
             <a :href="`/players/${player.slug}`"><img :src="player.image.formats.small.url" :alt="player.image.name" /></a>
             <p>{{ player.name }}</p>
           </li>
         </ul>
   
-        <div class="pagination">
+        <div class="pagination" v-if="!loading">
           <button @click="goToPage(1)" :disabled="currentPage === 1">Début</button>
           <button @click="previousPage" :disabled="currentPage === 1">Précédent</button>
           <span v-for="page in visiblePages" :key="page" @click="goToPage(page)" :class="{ active: currentPage === page }">{{ page }}</span>
@@ -41,8 +42,6 @@
   </template>
   
   <script setup lang="ts">
-
-  
   const { find } = useStrapi();
   
   const selectedTag = ref('all');
@@ -53,13 +52,16 @@
   const paginatedPlayers = ref([]);
   const visiblePages = ref([]);
   const searchTerm = ref('');
+  const loading = ref(true); // Variable de chargement
   
   const loadData = async () => {
     try {
       const response = await find('players', { populate: '*' });
       data.value = response.data;
+      loading.value = false; // Mettre à false lorsque le chargement est terminé
     } catch (error) {
       console.error('Erreur lors du chargement des données des joueurs :', error);
+      loading.value = false; // Mettre à false en cas d'erreur aussi
     }
   };
   
@@ -143,81 +145,86 @@
   </script>
   
   <style scoped>
-
-  h1 {
-    text-align: center;
-    font-size: 5rem;
-  }
   
-  .filtre {
+    h1 {
+      text-align: center;
+      font-size: 5rem;
+    }
+    
+    .filtre {
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      margin-bottom: 20px;
+      background-color: #f1f1f1;
+    padding: 10px;
+  }
+
+  select {
+    padding: 5px;
+    margin-left: 10px;
+  }
+
+  ul {
     display: flex;
-    justify-content: space-evenly;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  ul p {
+    text-align: center;
+  }
+
+  img {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+  }
+
+  .pagination {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .pagination button,
+  .pagination span {
+    margin: 0 5px;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .pagination button:disabled,
+  .pagination span.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .pagination span.active {
+    background-color: #007bff;
+    color: #fff;
+  }
+
+  .recherche {
+    display: flex;
+    justify-content: center;
     align-items: center;
     margin-bottom: 20px;
     background-color: #f1f1f1;
-  padding: 10px;
-}
+    padding: 10px;
+  }
 
-select {
-  padding: 5px;
-  margin-left: 10px;
-}
+  .recherche label {
+    margin-right: 10px;
+  }
 
-ul {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-ul p {
-  text-align: center;
-}
-
-img {
-  width: 200px;
-  height: 200px;
-  object-fit: cover;
-}
-
-.pagination {
-  margin-top: 10px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.pagination button,
-.pagination span {
-  margin: 0 5px;
-  padding: 5px 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.pagination button:disabled,
-.pagination span.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagination span.active {
-  background-color: #007bff;
-  color: #fff;
-}
-
-.recherche {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 20px;
-  background-color: #f1f1f1;
-  padding: 10px;
-}
-
-.recherche label {
-  margin-right: 10px;
-}
-</style>
+  .loading-message {
+    text-align: center;
+    margin-top: 20px;
+  }
+  </style>
